@@ -9,17 +9,17 @@ trans.insert(0, transforms.Resize(224))
 trans = transforms.Compose(trans)
 batch_size = 256
 
-def LoadMnist():
+def LoadMnist(root):
     train_data = datasets.MNIST(
-        root="./data",
+        root=root,
         train=True,
         download=True,                                                                                                                                                                                              
         transform=trans
     )
 
     test_data = datasets.MNIST(
-        root="./data",
-        rain=False,
+        root=root,
+        train=False,
         download=True,
         transform=trans
     )
