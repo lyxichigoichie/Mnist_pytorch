@@ -16,7 +16,7 @@ def init_weights(m):
             nn.init.xavier_uniform_(m.weight)
 
 #定义训练循环和测试循环
-def train(train_dataloader, test_dataloader, model, device, loss_fn, optimizer, epoch):
+def train(train_dataloader, test_dataloader, model, device, loss_fn, optimizer, epoch, ac_func):
     epoch_num = []
     loss_list = []
     acc_list = []
@@ -26,8 +26,13 @@ def train(train_dataloader, test_dataloader, model, device, loss_fn, optimizer, 
         running_loss = 0    
         for batch, (X, y) in enumerate(train_dataloader):
             X, y = X.to(device), y.to(device)
-            pred = model(X)
+            pred = model(X,ac_func)
+            # pred_flat = pred.clone().argmax(dim=1)
+            # pred_flat = torch.tensor(pred_flat, requires_grad=True)
+            # print(pred_flat)
+            # y = torch.tensor(y,dtype = torch.float32)
             loss = loss_fn(pred, y)
+            # print(loss)
             running_loss += loss
             # Backpropagation
             optimizer.zero_grad()
@@ -44,11 +49,11 @@ def train(train_dataloader, test_dataloader, model, device, loss_fn, optimizer, 
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
                 running_loss = 0
         
-        correct = test(test_dataloader, model, device, loss_fn)
+        correct = test(test_dataloader, model, device, loss_fn, ac_func)
         acc_list.append(correct)
     return acc_list, loss_list
 
-def test(test_dataloader, model, device, loss_fn):
+def test(test_dataloader, model, device, loss_fn, ac_func):
     acc_list = []
     size = len(test_dataloader.dataset)
     num_batches = len(test_dataloader)
@@ -57,7 +62,7 @@ def test(test_dataloader, model, device, loss_fn):
     with torch.no_grad():
         for X, y in test_dataloader:
             X, y = X.to(device), y.to(device)
-            pred = model(X)
+            pred = model(X,ac_func)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 

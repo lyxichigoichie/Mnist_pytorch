@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 import Trainer
+from torch.nn import functional as F
 
 
 net_config = {\
@@ -14,8 +15,8 @@ net_config = {\
     'lr': 0.001,
     'optimizer': 'SGD',
     'loss_fn': 'CrossEntropyLoss',
+    # 'loss_fn': 'MSELoss',
     'epoch_num': 30,
-    'model_path': './Trained/MnistOnAlexNet_epoch30.pkl'
     }
 
 
@@ -41,8 +42,12 @@ if __name__ == '__main__':
 
     if net_config['loss_fn'] == 'CrossEntropyLoss':
         loss_fn = nn.CrossEntropyLoss()
-    elif net_config['loss_fn'] == 'MSE':
-        optimizer = nn.MSELoss()
+        model_path = './Trained/epoch30_CrossEntropyLoss.pkl'
+    elif net_config['loss_fn'] == 'MSELoss':
+        loss_fn = nn.MSELoss()
+        model_path = './Trained/epoch30_MSELoss.pkl'
+
+    model_path = './Trained/epoch_CrossEntropyLoss_sigmoid.pkl'
 
     model.to(device=net_config['device'])
 
@@ -55,14 +60,32 @@ if __name__ == '__main__':
                                   device = net_config['device'],
                                   loss_fn = loss_fn,
                                   optimizer = optimizer,
-                                  epoch = net_config['epoch_num']
+                                  epoch = net_config['epoch_num'],
+                                  ac_func = torch.sigmoid
                                   )
     # save model
-    torch.save(model.state_dict(), net_config['model_path'])
+    torch.save(model.state_dict(), model_path)
 
     # change acc_list, loss_list from list into numpy
     acc_list = np.array(acc_list)
     loss_list = np.array(loss_list)
-    # save acc_list and loss_list
-    np.save('./loss_acc/loss',loss_list)
-    np.save('./loss_acc/acc',acc_list)
+    # save acc_list and loss_list to print picture
+    np.save('./data/MSE_loss',loss_list)
+    np.save('./data/MSE_acc',acc_list)
+
+    #评估模型
+    model.eval()
+    model.to('cpu')
+    pred_tensor = torch.tensor([])
+    y_list = torch.tensor([])
+    with torch.no_grad():
+        for X, y in test_dataloader:
+            pred = model(X, torch.sigmoid)
+            y_list = torch.cat([y_list,y])
+            pred_tensor = torch.cat([pred_tensor, pred])
+    pred_list = pred_tensor.clone().argmax(dim=1)
+    # save y_list and pred_list in test_dataset
+    y_list = y_list.numpy()
+    pred_list = pred_list.numpy()
+    np.save('./data/CrossEntropyLoss_sigmoid_y_list',y_list)
+    np.save('./data/CrossEntropyLoss_sigmoid_pred_list',pred_list)
